@@ -14,10 +14,11 @@ Then lets create our last login feature package based on Spatie's skeleton packa
 git clone git@github.com:spatie/skeleton-php.git laravel-user-logins
 ```
 
-Now lets `cd` to our laravel app
+Now lets `cd` to our laravel app and configure the package
 
 ```
 cd lastlogin-app
+./configure-skeleton.sh
 ```
 
 Then add our package on our app under `composer.json` file
@@ -33,7 +34,7 @@ index 288180d..1e7850d 100644
          "laravel/framework": "^6.2",
 -        "laravel/tinker": "^1.0"
 +        "laravel/tinker": "^1.0",
-+        "harlekoy/laravel-user-lastlogin": "dev-master"
++        "harlekoy/laravel-user-logins": "dev-master"
      },
      "require-dev": {
          "facade/ignition": "^1.4",
@@ -44,7 +45,7 @@ index 288180d..1e7850d 100644
 +    "repositories": [
 +        {
 +            "type": "path",
-+            "url": "../laravel-user-lastlogin"
++            "url": "../laravel-user-logins"
 +        }
 +    ],
      "autoload": {
@@ -182,7 +183,7 @@ class CreateLoginsTables extends Migration
 }
 ```
 
-You can see in the code we are extracting information from the non-existing config file. So need to create that file and add the necessary variables the we can use throughtout the app and can dynamically change on the fly.
+You can see in the code we are extracting information from the non-existing config file. So we need to create that file and add the necessary variables the we can use through out the app and can dynamically change on the fly.
 
 ```bash
 // Create the config file
@@ -195,7 +196,7 @@ return [
     'path'            => 'logins',
     'user_table_name' => 'users',
     'table_name'      => 'logins',
-    'user_model'      => App\User::class,
+    'user_model'      => App\\\User::class,
 ];" > config/lastlogin.php
 ```
 
@@ -212,7 +213,8 @@ index a1ea84f..cd808a6 100644
              $this->publishes([
 -                __DIR__.'/../config/lastlogin.php' => config_path('skeleton.php'),
 +                __DIR__.'/../config/lastlogin.php' => config_path('lastlogin.php'),
-             ], 'config');
+-            ], 'config');
++            ], 'lastlogin.config');
 
              $this->publishes([
 @@ -35,6 +38,49 @@
@@ -231,12 +233,10 @@ index a1ea84f..cd808a6 100644
 +    protected function getMigrationFileName(Filesystem $filesystem): string
 +    {
 +        $timestamp = date('Y_m_d_His');
-+        return Collection::make($this->app->databasePath().DIRECTORY_SEPARATOR.'migrati
-ons'.DIRECTORY_SEPARATOR)
++        return Collection::make($this->app->databasePath().DIRECTORY_SEPARATOR.'migrations'.DIRECTORY_SEPARATOR)
 +            ->flatMap(function ($path) use ($filesystem) {
 +                return $filesystem->glob($path.'*_create_logins_tables.php');
-+            })->push($this->app->databasePath()."/migrations/{$timestamp}_create_logins_tables
-sion_tables.php")
++            })->push($this->app->databasePath()."/migrations/{$timestamp}_create_logins_tables.php")
 +            ->first();
 +    }
 ```
@@ -261,8 +261,8 @@ public function boot()
         ...
 
 +       $this->publishes([
-+           __DIR__.'/../database/migrations/create_logins_tables.php.stub' => $this->getMigrationFileName($filesystem),
-+       ], 'migrations');
++           __DIR__.'/../database/migrations/create_logins_table.php.stub' => $this->getMigrationFileName($filesystem),
++       ], 'lastlogin.migrations');
 
         ...
 ```
@@ -272,10 +272,6 @@ public function boot()
 Lets create our first Model
 
 ```bash
-// Create the Login model
-mkdir src/Models && touch src/Models/Login.php
-
-// Add the necessary codes
 echo "<?php
 
 namespace Harlekoy\LastLogin\Models;
@@ -289,10 +285,10 @@ class Login extends Model
      *
      * @var array
      */
-    protected $fillable = ['ip_address'];
+    protected \$fillable = ['ip_address'];
 
     /**
-     * Dont set any `updated_at` field.
+     * Dont set any 'updated_at' field.
      *
      * @var string|null
      */
@@ -305,7 +301,7 @@ class Login extends Model
      */
     public function user()
     {
-        return $this->belongsTo(config('lastlogin.user_model'));
+        return \$this->belongsTo(config('lastlogin.user_model'));
     }
 }" > src/Models/Login.php
 ```
@@ -435,21 +431,17 @@ index a1ea84f..a767ae4 100644
 
 -            /*
 -            $this->loadViewsFrom(__DIR__.'/../resources/views', 'skeleton');
-+
-+            $this->loadViewsFrom(__DIR__.'/../resources/views', 'lastlogin');
 
              $this->publishes([
 -                __DIR__.'/../resources/views' => base_path('resources/views/vendor/skeleton'),
 +                __DIR__.'/../resources/views' => base_path('resources/views/vendor/lastlogin'),
              ], 'views');
 -            */
-+
-+            $this->loadViewsFrom(
-+                __DIR__.'/../resources/views', 'lastlogin'
-+            );
-+
-+            $this->registerRoutes();
          }
++
++        $this->registerRoutes();
++
++        $this->loadViewsFrom(__DIR__.'/../resources/views', 'lastlogin');
      }
 +
 +    /**
